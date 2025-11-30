@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>WorkPulse V104 (V86 Base + Features)</title>
+    <title>WorkPulse V103 (V86 Base + Features)</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -97,7 +97,8 @@
         };
 
         const DEPARTMENTS = ['FOH', 'BOH'];
-        const ROLES = ['Area Manager', 'Store Leader', 'Manager']; 
+        const ROLES = ['Area Manager', 'Store Leader', 'Manager'];
+        const STORES = ['UTC','IRV','SCOT']; 
 
         const safeParse = (key, fallback) => { try { const item = localStorage.getItem(key); return item ? JSON.parse(item) : fallback; } catch (e) { return fallback; } };
         const norm = (str) => (str || '').toLowerCase().trim();
@@ -153,12 +154,12 @@
 
         function App() {
             const KEY_USER = 'wp_v48_user'; const KEY_TEAM = 'wp_v48_team'; const KEY_COLLAPSED = 'wp_v48_collapsed'; const KEY_THEME = 'wp_theme_mode';
-            const [tasks, setTasks] = React.useState([]); const [profile, setProfile] = React.useState(null); const [team, setTeam] = React.useState([]); const [loading, setLoading] = React.useState(true); const [viewMode, setViewMode] = React.useState('kanban'); const [pageMode, setPageMode] = React.useState('my-work'); const [filterQuery, setFilterQuery] = React.useState(''); const [modal, setModal] = React.useState(null); const [selectedTask, setSelectedTask] = React.useState(null); const [showConfetti, setShowConfetti] = React.useState(false); const [flash, setFlash] = React.useState(false); const [isDarkMode, setIsDarkMode] = React.useState(false);
+            const [tasks, setTasks] = React.useState([]); const [profile, setProfile] = React.useState(null); const [team, setTeam] = React.useState([]); const [loading, setLoading] = React.useState(true); const [viewMode, setViewMode] = React.useState('kanban'); const [pageMode, setPageMode] = React.useState('my-work'); const [storeFilter, setStoreFilter] = React.useState('ALL'); const [filterQuery, setFilterQuery] = React.useState(''); const [modal, setModal] = React.useState(null); const [selectedTask, setSelectedTask] = React.useState(null); const [showConfetti, setShowConfetti] = React.useState(false); const [flash, setFlash] = React.useState(false); const [isDarkMode, setIsDarkMode] = React.useState(false);
             const [isEditingTitle, setIsEditingTitle] = React.useState(false); const [isEditingDesc, setIsEditingDesc] = React.useState(false); const [isManagingAssignees, setIsManagingAssignees] = React.useState(false); const [editTitleValue, setEditTitleValue] = React.useState(''); const [editDescValue, setEditDescValue] = React.useState(''); 
             const [viewImage, setViewImage] = React.useState(null); const [collapsedSections, setCollapsedSections] = React.useState({ FOH: false, BOH: false }); const [expandedTasks, setExpandedTasks] = React.useState({}); 
-            const [tempName, setTempName] = React.useState(''); const [tempEmail, setTempEmail] = React.useState(''); const [tempRole, setTempRole] = React.useState('Manager'); const [newTaskTitle, setNewTaskTitle] = React.useState(''); const [newTaskDesc, setNewTaskDesc] = React.useState(''); const [newTaskDept, setNewTaskDept] = React.useState('FOH'); const [newTaskDueDate, setNewTaskDueDate] = React.useState(''); const [newTaskPhoto, setNewTaskPhoto] = React.useState(null); const [newTaskAssignees, setNewTaskAssignees] = React.useState([]); const [newTaskRequireReview, setNewTaskRequireReview] = React.useState(true); const [newTaskPriority, setNewTaskPriority] = React.useState('Medium'); const [chatInput, setChatInput] = React.useState(''); const [subtaskInput, setSubtaskInput] = React.useState(''); const [memberFormName, setMemberFormName] = React.useState(''); const [memberFormEmail, setMemberFormEmail] = React.useState(''); const [memberFormRole, setMemberFormRole] = React.useState('Manager'); const [editingMemberId, setEditingMemberId] = React.useState(null);
+            const [tempName, setTempName] = React.useState(''); const [tempEmail, setTempEmail] = React.useState(''); const [tempRole, setTempRole] = React.useState('Manager'); const [tempStore, setTempStore] = React.useState('UTC'); const [newTaskTitle, setNewTaskTitle] = React.useState(''); const [newTaskDesc, setNewTaskDesc] = React.useState(''); const [newTaskDept, setNewTaskDept] = React.useState('FOH'); const [newTaskDueDate, setNewTaskDueDate] = React.useState(''); const [newTaskPhoto, setNewTaskPhoto] = React.useState(null); const [newTaskAssignees, setNewTaskAssignees] = React.useState([]); const [newTaskRequireReview, setNewTaskRequireReview] = React.useState(true); const [newTaskPriority, setNewTaskPriority] = React.useState('Medium'); const [chatInput, setChatInput] = React.useState(''); const [subtaskInput, setSubtaskInput] = React.useState(''); const [memberFormName, setMemberFormName] = React.useState(''); const [memberFormEmail, setMemberFormEmail] = React.useState(''); const [memberFormRole, setMemberFormRole] = React.useState('Manager'); const [memberFormStore, setMemberFormStore] = React.useState('UTC'); const [editingMemberId, setEditingMemberId] = React.useState(null);
             
-            // V92/V104: STABLE INDEX LOGIC
+            // V92/V103: STABLE INDEX LOGIC
             const [indexErrorLink, setIndexErrorLink] = React.useState(null);
             const [dateFilter, setDateFilter] = React.useState({ start: '', end: '' });
             const [fetchHistoryTrigger, setFetchHistoryTrigger] = React.useState(0);
@@ -241,8 +242,8 @@
             };
             const getAssigneeEmails = (t) => { const safeList = getSafeAssignees(t); return safeList.map(name => { const member = team.find(m => norm(m.name) === norm(name)); return member ? member.email : null; }).filter(e => e).join(','); };
             const handleToggleStuck = () => { if (selectedTask.stuckReason) { updateTask(selectedTask.id, { stuckReason: null }); } else { const reason = prompt("Why is this task stuck? (e.g. Waiting on Vendor)"); if (reason) { updateTask(selectedTask.id, { stuckReason: reason }); } } };
-            const handleJoin=()=>{if(!tempName)return alert("Required");const u={id:Date.now().toString(),name:tempName.trim(),email:tempEmail,role:tempRole};setProfile(u);localStorage.setItem(KEY_USER,JSON.stringify(u));setModal(null);const exists=team.find(m=>norm(m.name)===norm(u.name));if(!exists){const newTeam=[...team,u];setTeam(newTeam);localStorage.setItem(KEY_TEAM,JSON.stringify(newTeam));}};
-            const handleCreateTask=()=>{if(!newTaskTitle)return;const finalAssignees=newTaskAssignees.length>0?newTaskAssignees:['Unassigned'];let autoSubtasks=[];if(newTaskAssignees.includes('Everyone')&&team.length>0)autoSubtasks=team.map(m=>({id:Date.now()+Math.random().toString(),text:m.name,completed:false}));const t={id:Date.now().toString(),title:newTaskTitle,description:newTaskDesc,status:'To Do',department:newTaskDept,priority:newTaskPriority,assignees:finalAssignees,creatorName:profile.name,creatorRole:profile.role,dueDate:newTaskDueDate,photo:newTaskPhoto,comments:[],subtasks:autoSubtasks,archived:false,requireReview:newTaskRequireReview,createdAt:new Date().toISOString(), stuckReason: ''};db.collection('tasks_v2').doc(t.id).set(t).then(()=>{setModal(null);setNewTaskTitle('');setNewTaskDesc('');setNewTaskPhoto(null);setNewTaskAssignees([]);setNewTaskRequireReview(true);}).catch(err=>alert("Error saving: "+err.message));};
+            const handleJoin=()=>{if(!tempName)return alert("Required");const u={id:Date.now().toString(),name:tempName.trim(),email:tempEmail,role:tempRole,store:tempStore||'UTC'};setProfile(u);localStorage.setItem(KEY_USER,JSON.stringify(u));setModal(null);const exists=team.find(m=>norm(m.name)===norm(u.name));if(!exists){const newTeam=[...team,u];setTeam(newTeam);localStorage.setItem(KEY_TEAM,JSON.stringify(newTeam));}};
+            const handleCreateTask=()=>{if(!newTaskTitle)return;const finalAssignees=newTaskAssignees.length>0?newTaskAssignees:['Unassigned'];let autoSubtasks=[];if(newTaskAssignees.includes('Everyone')&&visibleTeam.length>0)autoSubtasks=visibleTeam.map(m=>({id:Date.now()+Math.random().toString(),text:m.name,completed:false}));const t={id:Date.now().toString(),title:newTaskTitle,description:newTaskDesc,status:'To Do',department:newTaskDept,priority:newTaskPriority,assignees:finalAssignees,creatorName:profile.name,creatorRole:profile.role,dueDate:newTaskDueDate,photo:newTaskPhoto,comments:[],subtasks:autoSubtasks,archived:false,requireReview:newTaskRequireReview,createdAt:new Date().toISOString(),store:(profile&&profile.role==='Area Manager'&&storeFilter&&storeFilter!=='ALL'?storeFilter:profile&&profile.store?profile.store:null)||'UTC', stuckReason: ''};db.collection('tasks_v2').doc(t.id).set(t).then(()=>{setModal(null);setNewTaskTitle('');setNewTaskDesc('');setNewTaskPhoto(null);setNewTaskAssignees([]);setNewTaskRequireReview(true);}).catch(err=>alert("Error saving: "+err.message));};
             const cycleStatus=(task,e)=>{if(e&&e.stopPropagation)e.stopPropagation();const safeAssignees=getSafeAssignees(task);const myName=norm(profile.name);const canEdit=safeAssignees.some(a=>norm(a)===myName)||safeAssignees.includes('Everyone')||['Area Manager','Store Leader','Manager'].includes(profile.role)||norm(task.creatorName)===myName;if(!canEdit)return alert(`Access Denied.`);const needsReview=task.requireReview!==false;if(task.status==='Pending Review'&&!['Area Manager','Store Leader','Manager'].includes(profile.role))return alert("Manager approval needed.");let next=STATUS_CONFIG[task.status].next;if(task.status==='In Progress'&&!needsReview)next='Done';if(next==='Archive'){updateTask(task.id,{archived:true});setShowConfetti(true);setTimeout(()=>setShowConfetti(false),2000);return;}updateTask(task.id,{status:next});};
             const restoreTask=(task)=>updateTask(task.id,{archived:false,status:'In Progress'});
             const updateTask=(id,data)=>{
@@ -255,7 +256,7 @@
             const handleSubtaskToggle=(subtask)=>{const isEveryoneTask=selectedTask.assignees.includes('Everyone');const isMyName=norm(subtask.text)===norm(profile.name);const isAdmin=['Area Manager','Store Leader'].includes(profile.role);if(isEveryoneTask&&!isMyName&&!isAdmin)return;const newSubtasks=(selectedTask.subtasks||[]).map(s=>s.id===subtask.id?{...s,completed:!s.completed}:s);const allComplete=newSubtasks.every(s=>s.completed);let updates={subtasks:newSubtasks};if(isEveryoneTask&&allComplete&&selectedTask.status!=='Done'&&selectedTask.status!=='Pending Review'){updates.status=selectedTask.requireReview?'Pending Review':'Done';setShowConfetti(true);setTimeout(()=>setShowConfetti(false),2000);}updateTask(selectedTask.id,updates);};
             const handlePhotoUpload=async(e)=>{const file=e.target.files[0];if(file){try{const b64=await compressImage(file);setNewTaskPhoto(b64);setFlash(true);setTimeout(()=>setFlash(false),500);}catch(err){console.error(err);}}};
             const handleAddAssignee=(name)=>{if(!selectedTask)return;let current=[...selectedTask.assignees];if(current.includes(name))current=current.filter(n=>n!==name);else{if(current.includes('Unassigned'))current=current.filter(n=>n!=='Unassigned');current.push(name);}updateTask(selectedTask.id,{assignees:current});};
-            const handleSaveMember=()=>{if(!memberFormName)return;const memberData={name:memberFormName,email:memberFormEmail,role:memberFormRole||'Manager'};if(editingMemberId){const updatedTeam=team.map(m=>m.id===editingMemberId?{...m,...memberData}:m);setTeam(updatedTeam);localStorage.setItem(KEY_TEAM,JSON.stringify(updatedTeam));setEditingMemberId(null);}else{const newId=Date.now().toString();const newTeam=[...team,{...memberData,id:newId}];setTeam(newTeam);localStorage.setItem(KEY_TEAM,JSON.stringify(newTeam));}setMemberFormName('');setMemberFormEmail('');setMemberFormRole('Manager');};
+            const handleSaveMember=()=>{if(!memberFormName)return;const memberData={name:memberFormName,email:memberFormEmail,role:memberFormRole||'Manager',store:memberFormStore||'UTC'};if(editingMemberId){const updatedTeam=team.map(m=>m.id===editingMemberId?{...m,...memberData}:m);setTeam(updatedTeam);localStorage.setItem(KEY_TEAM,JSON.stringify(updatedTeam));setEditingMemberId(null);}else{const newId=Date.now().toString();const newTeam=[...team,{...memberData,id:newId}];setTeam(newTeam);localStorage.setItem(KEY_TEAM,JSON.stringify(newTeam));}setMemberFormName('');setMemberFormEmail('');setMemberFormRole('Manager');setMemberFormStore('UTC');};
             const handleEditMember=(m)=>{setMemberFormName(m.name);setMemberFormEmail(m.email);setMemberFormRole(m.role);setEditingMemberId(m.id);};
             const handleCancelEdit=()=>{setMemberFormName('');setMemberFormEmail('');setMemberFormRole('Manager');setEditingMemberId(null);};
             const handleDeleteMember=(id)=>{if(!confirm("Remove?"))return;const newTeam=team.filter(m=>m.id!==id);setTeam(newTeam);localStorage.setItem(KEY_TEAM,JSON.stringify(newTeam));if(editingMemberId===id)handleCancelEdit();};
@@ -263,12 +264,33 @@
             const handleResetApp=()=>{if(confirm("Reset local data?")){localStorage.clear();window.location.reload();}};
 
             let displayTasks = viewMode === 'history' ? historyTasks : activeTasks;
+            if (profile) {
+                const isAreaManager = profile.role === 'Area Manager';
+                const effectiveStore = isAreaManager
+                    ? (storeFilter && storeFilter !== 'ALL' ? storeFilter : null)
+                    : (profile.store || null);
+                if (effectiveStore) {
+                    displayTasks = displayTasks.filter(t => !t.store || t.store === effectiveStore);
+                }
+            }
             // Local Filter
             if (viewMode !== 'history' && viewMode !== 'kanban' && pageMode === 'my-work' && profile) { const myName = norm(profile.name); displayTasks = displayTasks.filter(t => { const safe = getSafeAssignees(t); return safe.some(a => norm(a) === myName) || safe.includes('Everyone'); }); }
             if (filterQuery) { const q = norm(filterQuery); displayTasks = displayTasks.filter(t => norm(t.title).includes(q) || getSafeAssignees(t).some(a => norm(a).includes(q))); }
             if (viewMode === 'list' || pageMode === 'my-work') { displayTasks.sort((a,b) => { const scoreA = PRIORITIES[a.priority]?.score || 2; const scoreB = PRIORITIES[b.priority]?.score || 2; return scoreB - scoreA; }); }
             
-            const fohTasks = displayTasks.filter(t => t.department === 'FOH');
+            
+            let visibleTeam = team;
+            if (profile) {
+                const isAreaManager = profile.role === 'Area Manager';
+                const effectiveStore = isAreaManager
+                    ? (storeFilter && storeFilter !== 'ALL' ? storeFilter : null)
+                    : (profile.store || null);
+                if (effectiveStore) {
+                    visibleTeam = team.filter(m => !m.store || m.store === effectiveStore);
+                }
+            }
+
+const fohTasks = displayTasks.filter(t => t.department === 'FOH');
             const bohTasks = displayTasks.filter(t => t.department === 'BOH');
 
             const mainBg = isDarkMode ? 'theme-dark-bg' : 'theme-light-bg';
@@ -281,7 +303,7 @@
             const overdueTasks = activeTasks.filter(t => t.dueDate && t.status !== 'Done' && t.dueDate < new Date().toISOString().split('T')[0]).length;
             const stuckTasks = activeTasks.filter(t => !!t.stuckReason).length;
 
-            if (loading) return <div className={`h-screen flex items-center justify-center font-bold animate-pulse ${isDarkMode ? 'bg-slate-900 text-indigo-400' : 'bg-white text-indigo-600'}`}>Loading WorkPulse V104...</div>;
+            if (loading) return <div className={`h-screen flex items-center justify-center font-bold animate-pulse ${isDarkMode ? 'bg-slate-900 text-indigo-400' : 'bg-white text-indigo-600'}`}>Loading WorkPulse V103...</div>;
 
             const StatCard = ({ label, count, icon, color }) => (
                 <div className={`flex-1 p-4 rounded-2xl border flex items-center justify-between ${isDarkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-white/60 border-white shadow-sm'}`}>
@@ -320,12 +342,12 @@
                             </div>
                             <div className="hidden md:flex col-span-1 items-center"><span className={`text-[10px] font-bold px-3 py-1 rounded-full border ${isDarkMode ? p.dark : p.light}`}>{task.priority || 'Medium'}</span></div>
                             
-                            {/* V104: FULL NAME PILLS */}
+                            {/* V103: FULL NAME PILLS */}
                             <div className="hidden md:flex col-span-2 gap-1.5 flex-wrap">{safeAssignees.map((a,i) => <span key={i} className={`text-[10px] px-2.5 py-1 rounded-full font-bold border truncate max-w-[120px] ${getRolePill(getMemberRole(a))}`}>{a}</span>)}</div>
                             
                             <div className="col-span-6 md:col-span-2 flex justify-center"><StatusPill status={task.status} onClick={(e)=>cycleStatus(task,e)} isDarkMode={isDarkMode} /></div>
                             
-                            {/* V104: DATES */}
+                            {/* V103: DATES */}
                             <div className={`hidden md:block col-span-1 text-[10px] font-mono ${textSecondary}`}>{task.createdAt ? formatDate(task.createdAt) : '-'}</div>
                             <div className={`hidden md:block col-span-1 text-[10px] font-mono font-bold ${urgency.color}`}>{task.dueDate ? formatDate(task.dueDate+'T00:00:00') : '-'}</div>
                             
@@ -350,10 +372,25 @@
                     {viewImage && <div className="fixed inset-0 z-[60] bg-black/95 flex items-center justify-center p-4 backdrop-blur-md animate-in fade-in duration-200" onClick={() => setViewImage(null)}><button onClick={() => setViewImage(null)} className="absolute top-4 right-4 p-3 bg-white/10 text-white rounded-full hover:bg-white/20 transition-colors"><Icon name="X" size={24} /></button><img src={viewImage} className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl" onClick={(e) => e.stopPropagation()} /></div>}
 
                     <header className={`${headerBg} sticky top-0 z-20 px-4 h-16 flex items-center justify-between transition-all`}>
-                        <div className="flex items-center gap-3"><div className="bg-gradient-to-tr from-indigo-600 to-purple-600 p-2 rounded-xl text-white shadow-lg shadow-indigo-500/30"><Icon name="Layout" size={20} /></div><h1 className={`text-xl font-bold tracking-tight ${textPrimary}`}>WorkPulse <span className={`text-[10px] px-2 py-0.5 rounded-full ml-1 align-top border ${isDarkMode ? 'bg-indigo-900/30 border-indigo-500/30 text-indigo-300' : 'bg-white/50 border-indigo-100 text-indigo-700'}`}>V104</span></h1></div>
+                        <div className="flex items-center gap-3"><div className="bg-gradient-to-tr from-indigo-600 to-purple-600 p-2 rounded-xl text-white shadow-lg shadow-indigo-500/30"><Icon name="Layout" size={20} /></div><h1 className={`text-xl font-bold tracking-tight ${textPrimary}`}>WorkPulse <span className={`text-[10px] px-2 py-0.5 rounded-full ml-1 align-top border ${isDarkMode ? 'bg-indigo-900/30 border-indigo-500/30 text-indigo-300' : 'bg-white/50 border-indigo-100 text-indigo-700'}`}>V103</span></h1></div>
                         <div className="flex gap-3 items-center">
                              <button onClick={toggleTheme} className={`p-2 rounded-full transition-colors ${isDarkMode ? 'bg-slate-800 text-amber-300 hover:bg-slate-700' : 'bg-amber-100 text-amber-600 hover:bg-amber-200'}`}><Icon name={isDarkMode ? "Moon" : "Sun"} size={18}/></button>
-                             {profile && <div className={`flex p-1 rounded-full border shadow-sm ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white/50 border-white/60'}`}><button onClick={() => setViewMode('list')} className={`p-2 rounded-full transition-all ${viewMode === 'list' ? (isDarkMode?'bg-slate-700 text-white shadow':'bg-white shadow text-indigo-600') : 'text-slate-400 hover:text-slate-500'}`}><Icon name="List" size={18}/></button><button onClick={() => setViewMode('kanban')} className={`p-2 rounded-full transition-all ${viewMode === 'kanban' ? (isDarkMode?'bg-slate-700 text-white shadow':'bg-white shadow text-indigo-600') : 'text-slate-400 hover:text-slate-500'}`}><Icon name="Kanban" size={18}/></button><button onClick={() => setViewMode('history')} className={`p-2 rounded-full transition-all ${viewMode === 'history' ? (isDarkMode?'bg-slate-700 text-white shadow':'bg-white shadow text-indigo-600') : 'text-slate-400 hover:text-slate-500'}`}><Icon name="History" size={18}/></button></div>}
+                             {profile && <div className={`flex items-center gap-3`}>
+                                <div className={`flex p-1 rounded-full border shadow-sm ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white/50 border-white/60'}`}>
+                                    <button onClick={() => setViewMode('list')} className={`p-2 rounded-full transition-all ${viewMode === 'list' ? (isDarkMode?'bg-slate-700 text-white shadow':'bg-white shadow text-indigo-600') : 'text-slate-400 hover:text-slate-500'}`}><Icon name="List" size={18}/></button>
+                                    <button onClick={() => setViewMode('kanban')} className={`p-2 rounded-full transition-all ${viewMode === 'kanban' ? (isDarkMode?'bg-slate-700 text-white shadow':'bg-white shadow text-indigo-600') : 'text-slate-400 hover:text-slate-500'}`}><Icon name="Kanban" size={18}/></button>
+                                    <button onClick={() => setViewMode('history')} className={`p-2 rounded-full transition-all ${viewMode === 'history' ? (isDarkMode?'bg-slate-700 text-white shadow':'bg-white shadow text-indigo-600') : 'text-slate-400 hover:text-slate-500'}`}><Icon name="History" size={18}/></button>
+                                </div>
+                                {profile.role === 'Area Manager' && (
+                                    <div className={`hidden md:flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-semibold border ${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-200' : 'bg-white/60 border-slate-200 text-slate-600'}`}>
+                                        <span className="uppercase tracking-wider mr-1 text-[10px] opacity-70">Store</span>
+                                        <button onClick={() => setStoreFilter('ALL')} className={`px-2 py-0.5 rounded-full ${storeFilter==='ALL' ? (isDarkMode?'bg-indigo-600 text-white':'bg-indigo-600 text-white') : 'hover:bg-slate-700/30'}`}>All</button>
+                                        <button onClick={() => setStoreFilter('UTC')} className={`px-2 py-0.5 rounded-full ${storeFilter==='UTC' ? (isDarkMode?'bg-emerald-500 text-slate-900':'bg-emerald-500 text-white') : 'hover:bg-slate-700/30'}`}>UTC</button>
+                                        <button onClick={() => setStoreFilter('IRV')} className={`px-2 py-0.5 rounded-full ${storeFilter==='IRV' ? (isDarkMode?'bg-amber-400 text-slate-900':'bg-amber-400 text-slate-900') : 'hover:bg-slate-700/30'}`}>IRV</button>
+                                        <button onClick={() => setStoreFilter('SCOT')} className={`px-2 py-0.5 rounded-full ${storeFilter==='SCOT' ? (isDarkMode?'bg-sky-400 text-slate-900':'bg-sky-400 text-slate-900') : 'hover:bg-slate-700/30'}`}>SCOT</button>
+                                    </div>
+                                )}
+                            </div>}
                             {profile ? <div className="flex gap-2"><button onClick={() => setModal('settings')} className={`p-2 rounded-full transition-colors ${isDarkMode ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-white/50 text-slate-500'}`}><Icon name="Settings" size={20} /></button><button onClick={() => setModal('task')} className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-5 py-2 rounded-full flex items-center gap-1.5 text-sm font-bold shadow-lg shadow-indigo-500/20 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all"><Icon name="Plus" size={18} /> New</button></div> : <button onClick={() => setModal('join')} className="text-indigo-600 font-bold text-sm">Log In</button>}
                         </div>
                     </header>
@@ -415,8 +452,19 @@
                                     </div>
                                 )}
                                 
-                                {/* V104: LIST HEADER ADDED HERE */}
-                                
+                                {/* V103: LIST HEADER ADDED HERE */}
+                                {viewMode === 'list' && (
+                                    <div className={`grid grid-cols-12 gap-4 px-6 py-3 mb-2 border-b text-[10px] uppercase font-bold tracking-wider ${isDarkMode ? 'text-slate-500 border-slate-800' : 'text-slate-400 border-slate-200'}`}>
+                                        <div className="col-span-5 md:col-span-4">Task / Details</div>
+                                        <div className="hidden md:block col-span-1">Priority</div>
+                                        <div className="hidden md:block col-span-2">Assigned To</div>
+                                        <div className="col-span-3 md:col-span-2 text-center">Status</div>
+                                        <div className="hidden md:block col-span-1">Created</div>
+                                        <div className="hidden md:block col-span-1">Due</div>
+                                        <div className="col-span-4 md:col-span-1 text-right">Action</div>
+                                    </div>
+                                )}
+
                                 {viewMode === 'list' && (
                                     <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
                                         {['FOH', 'BOH'].map(dept => {
@@ -429,21 +477,7 @@
                                                         <div className="flex items-center gap-4"><div className={`p-2.5 rounded-xl shadow-sm ${isDarkMode ? 'bg-slate-700 text-white' : 'bg-white text-indigo-600'}`}><Icon name={colors[1]} size={22} /></div><h3 className={`font-bold text-xl ${textPrimary}`}>{dept}</h3><span className={`text-xs px-3 py-1 rounded-full font-bold border ${isDarkMode?'bg-slate-700 border-slate-600 text-slate-300':'bg-white border-slate-100 text-slate-500 shadow-sm'}`}>{deptTasks.length}</span></div>
                                                         <div className={`text-slate-400 transition-transform duration-300 ${isCollapsed ? '-rotate-90' : ''}`}><Icon name="ChevronDown" size={24} /></div>
                                                     </div>
-                                                    {!isCollapsed && <div className="p-4 md:p-6">
-                                                        {deptTasks.length > 0 && (
-                                                            <div className={`grid grid-cols-12 gap-4 pb-2 mb-3 border-b text-[10px] uppercase font-bold tracking-wider ${isDarkMode ? 'text-slate-500 border-slate-800' : 'text-slate-400 border-slate-200'}`}>
-                                                                <div className="col-span-5 md:col-span-4">Task / Details</div>
-                                                                <div className="hidden md:block col-span-1">Priority</div>
-                                                                <div className="hidden md:block col-span-2">Assigned To</div>
-                                                                <div className="col-span-3 md:col-span-2 text-center">Status</div>
-                                                                <div className="hidden md:block col-span-1">Created</div>
-                                                                <div className="hidden md:block col-span-1">Due</div>
-                                                                <div className="col-span-4 md:col-span-1 text-right">Action</div>
-                                                            </div>
-                                                        )}
-                                                        {deptTasks.length === 0 && <EmptyState message="No active tasks" />}
-                                                        {deptTasks.map(task => <TaskRow key={task.id} task={task} />)}
-                                                    </div>}
+                                                    {!isCollapsed && <div className="p-4 md:p-6">{deptTasks.length === 0 && <EmptyState message="No active tasks" />}{deptTasks.map(task => <TaskRow key={task.id} task={task} />)}</div>}
                                                 </div>
                                             );
                                         })}
@@ -540,10 +574,15 @@
                                             <input type="text" value={memberFormName} onChange={e => setMemberFormName(e.target.value)} className={`w-full p-3 border rounded-2xl text-sm outline-none ${isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-white border-slate-200'}`} placeholder="Name" />
                                             <input type="email" value={memberFormEmail} onChange={e => setMemberFormEmail(e.target.value)} className={`w-full p-3 border rounded-2xl text-sm outline-none ${isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-white border-slate-200'}`} placeholder="Email" />
                                             <select value={memberFormRole} onChange={e => setMemberFormRole(e.target.value)} className={`w-full p-3 border rounded-2xl text-sm outline-none ${isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-white border-slate-200'}`}>{ROLES.map(r => <option key={r}>{r}</option>)}</select>
+                                            <select value={memberFormStore} onChange={e => setMemberFormStore(e.target.value)} className={`w-full p-3 border rounded-2xl text-sm outline-none ${isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-white border-slate-200'}`}>
+                                                <option value="UTC">UTC</option>
+                                                <option value="IRV">IRV</option>
+                                                <option value="SCOT">SCOT</option>
+                                            </select>
                                             <div className="flex gap-2 pt-1">{editingMemberId && <button onClick={handleCancelEdit} className="flex-1 bg-white border border-slate-200 text-slate-600 py-2.5 rounded-2xl font-bold text-sm">Cancel</button>}<button onClick={handleSaveMember} className={`flex-1 text-white py-2.5 rounded-2xl font-bold text-sm shadow-md transition-transform active:scale-95 ${editingMemberId ? 'bg-orange-500' : 'bg-indigo-600'}`}>{editingMemberId ? 'Save Changes' : 'Add User'}</button></div>
                                         </div>
                                     </div>
-                                    <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">{team.map(m => <div key={m.id} className={`flex justify-between items-center p-3 border rounded-2xl ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'}`}><div><div className={`font-bold text-sm ${textPrimary}`}>{m.name}</div><div className={`text-xs ${textSecondary}`}>{m.role} • {m.email}</div></div><div className="flex gap-1"><button onClick={() => handleEditMember(m)} className="p-2 text-slate-400 hover:text-indigo-600"><Icon name="Pencil" size={16}/></button><button onClick={() => handleDeleteMember(m.id)} className="p-2 text-slate-400 hover:text-red-500"><Icon name="Trash2" size={16} /></button></div></div>)}</div>
+                                    <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">{team.map(m => <div key={m.id} className={`flex justify-between items-center p-3 border rounded-2xl ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'}`}><div><div className={`font-bold text-sm ${textPrimary}`}>{m.name}</div><div className={`text-xs ${textSecondary}`}>{m.role} • {m.email} • {(m.store||'UTC')}</div></div><div className="flex gap-1"><button onClick={() => handleEditMember(m)} className="p-2 text-slate-400 hover:text-indigo-600"><Icon name="Pencil" size={16}/></button><button onClick={() => handleDeleteMember(m.id)} className="p-2 text-slate-400 hover:text-red-500"><Icon name="Trash2" size={16} /></button></div></div>)}</div>
                                 </div>
                             )}
 
@@ -557,7 +596,7 @@
                                             <div><label className={`text-xs font-bold uppercase ml-1 mb-1 block ${textSecondary}`}>Priority</label><select value={newTaskPriority} onChange={e => setNewTaskPriority(e.target.value)} className={`w-full p-3 border rounded-2xl text-sm outline-none ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200'}`}>{Object.keys(PRIORITIES).map(p => <option key={p} value={p}>{p}</option>)}</select></div>
                                             <div><label className={`text-xs font-bold uppercase ml-1 mb-1 block ${textSecondary}`}>Due Date</label><input type="date" value={newTaskDueDate} onChange={e => setNewTaskDueDate(e.target.value)} className={`w-full p-3 border rounded-2xl text-sm outline-none font-mono ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200'}`} /></div>
                                         </div>
-                                        <div className="space-y-2"><label className={`text-xs font-bold uppercase ml-1 ${textSecondary}`}>Assignees</label><div className={`flex flex-wrap gap-2 p-3 border rounded-3xl max-h-32 overflow-y-auto ${isDarkMode ? 'border-slate-700 bg-slate-800/50' : 'border-slate-100'}`}><button onClick={() => { if(newTaskAssignees.includes('Everyone')) setNewTaskAssignees(newTaskAssignees.filter(n=>n!=='Everyone')); else setNewTaskAssignees([...newTaskAssignees,'Everyone']); }} className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${newTaskAssignees.includes('Everyone')?'bg-indigo-600 text-white border-indigo-600 shadow-md':(isDarkMode?'bg-slate-800 border-slate-600 text-slate-300':'bg-white text-slate-500 border-slate-200')}`}>Everyone</button>{team.map((m,i)=><button key={i} onClick={() => { if(newTaskAssignees.includes(m.name)) setNewTaskAssignees(newTaskAssignees.filter(n=>n!==m.name)); else setNewTaskAssignees([...newTaskAssignees,m.name]); }} className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${newTaskAssignees.includes(m.name)?'bg-indigo-600 text-white border-indigo-600 shadow-md':(isDarkMode?'bg-slate-800 border-slate-600 text-slate-300':'bg-white text-slate-500 border-slate-200')}`}>{m.name}</button>)}</div></div>
+                                        <div className="space-y-2"><label className={`text-xs font-bold uppercase ml-1 ${textSecondary}`}>Assignees</label><div className={`flex flex-wrap gap-2 p-3 border rounded-3xl max-h-32 overflow-y-auto ${isDarkMode ? 'border-slate-700 bg-slate-800/50' : 'border-slate-100'}`}><button onClick={() => { if(newTaskAssignees.includes('Everyone')) setNewTaskAssignees(newTaskAssignees.filter(n=>n!=='Everyone')); else setNewTaskAssignees([...newTaskAssignees,'Everyone']); }} className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${newTaskAssignees.includes('Everyone')?'bg-indigo-600 text-white border-indigo-600 shadow-md':(isDarkMode?'bg-slate-800 border-slate-600 text-slate-300':'bg-white text-slate-500 border-slate-200')}`}>Everyone</button>{visibleTeam.map((m,i)=><button key={i} onClick={() => { if(newTaskAssignees.includes(m.name)) setNewTaskAssignees(newTaskAssignees.filter(n=>n!==m.name)); else setNewTaskAssignees([...newTaskAssignees,m.name]); }} className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${newTaskAssignees.includes(m.name)?'bg-indigo-600 text-white border-indigo-600 shadow-md':(isDarkMode?'bg-slate-800 border-slate-600 text-slate-300':'bg-white text-slate-500 border-slate-200')}`}>{m.name}</button>)}</div></div>
                                         <div className="grid grid-cols-2 gap-4"><div><label className={`text-xs font-bold uppercase ml-1 mb-1 block ${textSecondary}`}>Dept</label><select value={newTaskDept} onChange={e => setNewTaskDept(e.target.value)} className={`w-full p-3 border rounded-2xl text-sm outline-none ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200'}`}>{DEPARTMENTS.map(d => <option key={d}>{d}</option>)}</select></div><div className={`flex items-center gap-3 p-3 border rounded-2xl cursor-pointer transition-colors ${isDarkMode ? 'bg-slate-800 border-slate-700 hover:bg-slate-700' : 'bg-indigo-50/50 border-indigo-100 hover:bg-indigo-50'}`} onClick={() => setNewTaskRequireReview(!newTaskRequireReview)}><div className={`w-5 h-5 rounded-full flex items-center justify-center border ${newTaskRequireReview ? 'bg-indigo-600 border-indigo-600' : 'border-slate-400'}`}>{newTaskRequireReview && <Icon name="Check" size={12} className="text-white" />}</div><span className={`text-xs font-semibold ${textPrimary}`}>Review Needed</span></div></div>
                                         <label className="flex items-center justify-center gap-2 w-full h-14 border border-dashed border-slate-300 rounded-2xl cursor-pointer hover:bg-slate-50 hover:border-slate-400 transition-all text-slate-500 hover:text-slate-700"><Icon name="Camera" size={18} /><span className="text-sm font-medium">{newTaskPhoto ? "Photo Attached" : "Attach Photo"}</span><input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} /></label>
                                         <a href={(!newTaskTitle || !newTaskDueDate) ? '#' : `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(newTaskTitle)}&dates=${formatCalDate(newTaskDueDate)}/${getNextDay(newTaskDueDate)}&details=${encodeURIComponent("WorkPulse Task - Tip: Set Visibility to 'Private' to hide details from others.")}&add=${getAssigneeEmails({assignees: newTaskAssignees})}`} target="_blank" className={`w-full py-3 mb-2 rounded-2xl border flex items-center justify-center gap-2 font-bold text-sm transition-all ${(!newTaskTitle || !newTaskDueDate) ? (isDarkMode?'bg-slate-800 text-slate-600 border-slate-700':'bg-slate-50 text-slate-300 border-slate-100') : (isDarkMode ? 'bg-slate-800 text-indigo-400 border-slate-700 hover:bg-slate-700' : 'bg-white text-indigo-600 border-indigo-200 hover:bg-indigo-50')}`} onClick={(e) => { if(!newTaskTitle || !newTaskDueDate) e.preventDefault(); }}><Icon name="CalendarPlus" size={18} /> Schedule on G-Cal</a>
