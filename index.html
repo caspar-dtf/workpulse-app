@@ -157,7 +157,7 @@
             const [tasks, setTasks] = React.useState([]); const [profile, setProfile] = React.useState(null); const [team, setTeam] = React.useState([]); const [loading, setLoading] = React.useState(true); const [viewMode, setViewMode] = React.useState('kanban'); const [pageMode, setPageMode] = React.useState('my-work'); const [storeFilter, setStoreFilter] = React.useState('ALL'); const [filterQuery, setFilterQuery] = React.useState(''); const [modal, setModal] = React.useState(null); const [selectedTask, setSelectedTask] = React.useState(null); const [showConfetti, setShowConfetti] = React.useState(false); const [flash, setFlash] = React.useState(false); const [isDarkMode, setIsDarkMode] = React.useState(false);
             const [isEditingTitle, setIsEditingTitle] = React.useState(false); const [isEditingDesc, setIsEditingDesc] = React.useState(false); const [isManagingAssignees, setIsManagingAssignees] = React.useState(false); const [editTitleValue, setEditTitleValue] = React.useState(''); const [editDescValue, setEditDescValue] = React.useState(''); 
             const [viewImage, setViewImage] = React.useState(null); const [collapsedSections, setCollapsedSections] = React.useState({ FOH: false, BOH: false }); const [expandedTasks, setExpandedTasks] = React.useState({}); 
-            const [tempName, setTempName] = React.useState(''); const [tempEmail, setTempEmail] = React.useState(''); const [tempRole, setTempRole] = React.useState('Manager'); const [tempStore, setTempStore] = React.useState('UTC'); const [newTaskTitle, setNewTaskTitle] = React.useState(''); const [newTaskDesc, setNewTaskDesc] = React.useState(''); const [newTaskDept, setNewTaskDept] = React.useState('FOH'); const [newTaskDueDate, setNewTaskDueDate] = React.useState(''); const [newTaskPhoto, setNewTaskPhoto] = React.useState(null); const [newTaskAssignees, setNewTaskAssignees] = React.useState([]); const [newTaskRequireReview, setNewTaskRequireReview] = React.useState(true); const [newTaskPriority, setNewTaskPriority] = React.useState('Medium'); const [chatInput, setChatInput] = React.useState(''); const [subtaskInput, setSubtaskInput] = React.useState(''); const [memberFormName, setMemberFormName] = React.useState(''); const [memberFormEmail, setMemberFormEmail] = React.useState(''); const [memberFormRole, setMemberFormRole] = React.useState('Manager'); const [memberFormStore, setMemberFormStore] = React.useState('UTC'); const [editingMemberId, setEditingMemberId] = React.useState(null);
+            const [tempName, setTempName] = React.useState(''); const [tempEmail, setTempEmail] = React.useState(''); const [tempRole, setTempRole] = React.useState('Manager'); const [tempStore, setTempStore] = React.useState('UTC'); const [newTaskTitle, setNewTaskTitle] = React.useState(''); const [newTaskDesc, setNewTaskDesc] = React.useState(''); const [newTaskDept, setNewTaskDept] = React.useState('FOH'); const [newTaskDueDate, setNewTaskDueDate] = React.useState(''); const [newTaskPhoto, setNewTaskPhoto] = React.useState(null); const [newTaskAssignees, setNewTaskAssignees] = React.useState([]); const [newTaskRequireReview, setNewTaskRequireReview] = React.useState(false); const [newTaskPriority, setNewTaskPriority] = React.useState('Medium'); const [newTaskPrivate, setNewTaskPrivate] = React.useState(false); const [chatInput, setChatInput] = React.useState(''); const [subtaskInput, setSubtaskInput] = React.useState(''); const [memberFormName, setMemberFormName] = React.useState(''); const [memberFormEmail, setMemberFormEmail] = React.useState(''); const [memberFormRole, setMemberFormRole] = React.useState('Manager'); const [memberFormStore, setMemberFormStore] = React.useState('UTC'); const [editingMemberId, setEditingMemberId] = React.useState(null);
             
             // V92/V103: STABLE INDEX LOGIC
             const [indexErrorLink, setIndexErrorLink] = React.useState(null);
@@ -235,15 +235,27 @@
             const toggleTaskExpand = (e, taskId) => { e.stopPropagation(); setExpandedTasks(prev => ({ ...prev, [taskId]: !prev[taskId] })); };
             const getMemberRole = (name) => { const m = team.find(tm => norm(tm.name) === norm(name)); return m ? m.role : 'Staff'; };
             const getRolePill = (role) => {
-                if(role === 'Area Manager') return isDarkMode ? 'bg-amber-900/20 text-amber-200 border-amber-800/30' : 'bg-amber-50 text-amber-800 border-amber-200';
-                if(role === 'Store Leader') return isDarkMode ? 'bg-blue-900/20 text-blue-200 border-blue-800/30' : 'bg-blue-50 text-blue-800 border-blue-200';
-                if(role === 'Manager') return isDarkMode ? 'bg-indigo-900/20 text-indigo-200 border-indigo-800/30' : 'bg-indigo-50 text-indigo-800 border-indigo-200';
-                return isDarkMode ? 'bg-slate-800/50 text-slate-400 border-slate-700/30' : 'bg-slate-100 text-slate-600 border-slate-200';
-            };
+            if (isDarkMode) {
+                if (role === 'Area Manager') {
+                    return 'bg-amber-500/25 text-amber-100 border-amber-300';
+                }
+                if (role === 'Store Leader') {
+                    return 'bg-sky-500/25 text-sky-100 border-sky-300';
+                }
+                if (role === 'Manager') {
+                    return 'bg-indigo-500/25 text-indigo-100 border-indigo-300';
+                }
+                return 'bg-slate-600/70 text-slate-50 border-slate-400';
+            }
+            if (role === 'Area Manager') return 'bg-amber-50 text-amber-800 border-amber-200';
+            if (role === 'Store Leader') return 'bg-blue-50 text-blue-800 border-blue-200';
+            if (role === 'Manager') return 'bg-indigo-50 text-indigo-800 border-indigo-200';
+            return 'bg-slate-100 text-slate-600 border-slate-200';
+        };
             const getAssigneeEmails = (t) => { const safeList = getSafeAssignees(t); return safeList.map(name => { const member = team.find(m => norm(m.name) === norm(name)); return member ? member.email : null; }).filter(e => e).join(','); };
             const handleToggleStuck = () => { if (selectedTask.stuckReason) { updateTask(selectedTask.id, { stuckReason: null }); } else { const reason = prompt("Why is this task stuck? (e.g. Waiting on Vendor)"); if (reason) { updateTask(selectedTask.id, { stuckReason: reason }); } } };
             const handleJoin=()=>{if(!tempName)return alert("Required");const u={id:Date.now().toString(),name:tempName.trim(),email:tempEmail,role:tempRole,store:tempStore||'UTC'};setProfile(u);localStorage.setItem(KEY_USER,JSON.stringify(u));setModal(null);const exists=team.find(m=>norm(m.name)===norm(u.name));if(!exists){const newTeam=[...team,u];setTeam(newTeam);localStorage.setItem(KEY_TEAM,JSON.stringify(newTeam));}};
-            const handleCreateTask=()=>{if(!newTaskTitle)return;const finalAssignees=newTaskAssignees.length>0?newTaskAssignees:['Unassigned'];let autoSubtasks=[];if(newTaskAssignees.includes('Everyone')&&visibleTeam.length>0)autoSubtasks=visibleTeam.map(m=>({id:Date.now()+Math.random().toString(),text:m.name,completed:false}));const t={id:Date.now().toString(),title:newTaskTitle,description:newTaskDesc,status:'To Do',department:newTaskDept,priority:newTaskPriority,assignees:finalAssignees,creatorName:profile.name,creatorRole:profile.role,dueDate:newTaskDueDate,photo:newTaskPhoto,comments:[],subtasks:autoSubtasks,archived:false,requireReview:newTaskRequireReview,createdAt:new Date().toISOString(),store:(profile&&profile.role==='Area Manager'&&storeFilter&&storeFilter!=='ALL'?storeFilter:profile&&profile.store?profile.store:null)||'UTC', stuckReason: ''};db.collection('tasks_v2').doc(t.id).set(t).then(()=>{setModal(null);setNewTaskTitle('');setNewTaskDesc('');setNewTaskPhoto(null);setNewTaskAssignees([]);setNewTaskRequireReview(true);}).catch(err=>alert("Error saving: "+err.message));};
+            const handleCreateTask=()=>{if(!newTaskTitle)return;const finalAssignees=newTaskAssignees.length>0?newTaskAssignees:['Unassigned'];let autoSubtasks=[];if(newTaskAssignees.includes('Everyone')&&team.length>0)autoSubtasks=team.map(m=>({id:Date.now()+Math.random().toString(),text:m.name,completed:false}));const t={id:Date.now().toString(),title:newTaskTitle,description:newTaskDesc,status:'To Do',department:newTaskDept,priority:newTaskPriority,assignees:finalAssignees,creatorName:profile.name,creatorRole:profile.role,dueDate:newTaskDueDate,photo:newTaskPhoto,comments:[],subtasks:autoSubtasks,archived:false,requireReview:newTaskRequireReview,createdAt:new Date().toISOString(),isPrivate:newTaskPrivate,ownerName:profile&&profile.name?profile.name:'',store:profile&&profile.store?profile.store:'UTC', stuckReason: ''};db.collection('tasks_v2').doc(t.id).set(t).then(()=>{setModal(null);setNewTaskTitle('');setNewTaskDesc('');setNewTaskPhoto(null);setNewTaskAssignees([]);setNewTaskRequireReview(true);}).catch(err=>alert("Error saving: "+err.message));};
             const cycleStatus=(task,e)=>{if(e&&e.stopPropagation)e.stopPropagation();const safeAssignees=getSafeAssignees(task);const myName=norm(profile.name);const canEdit=safeAssignees.some(a=>norm(a)===myName)||safeAssignees.includes('Everyone')||['Area Manager','Store Leader','Manager'].includes(profile.role)||norm(task.creatorName)===myName;if(!canEdit)return alert(`Access Denied.`);const needsReview=task.requireReview!==false;if(task.status==='Pending Review'&&!['Area Manager','Store Leader','Manager'].includes(profile.role))return alert("Manager approval needed.");let next=STATUS_CONFIG[task.status].next;if(task.status==='In Progress'&&!needsReview)next='Done';if(next==='Archive'){updateTask(task.id,{archived:true});setShowConfetti(true);setTimeout(()=>setShowConfetti(false),2000);return;}updateTask(task.id,{status:next});};
             const restoreTask=(task)=>updateTask(task.id,{archived:false,status:'In Progress'});
             const updateTask=(id,data)=>{
@@ -256,8 +268,57 @@
             const handleSubtaskToggle=(subtask)=>{const isEveryoneTask=selectedTask.assignees.includes('Everyone');const isMyName=norm(subtask.text)===norm(profile.name);const isAdmin=['Area Manager','Store Leader'].includes(profile.role);if(isEveryoneTask&&!isMyName&&!isAdmin)return;const newSubtasks=(selectedTask.subtasks||[]).map(s=>s.id===subtask.id?{...s,completed:!s.completed}:s);const allComplete=newSubtasks.every(s=>s.completed);let updates={subtasks:newSubtasks};if(isEveryoneTask&&allComplete&&selectedTask.status!=='Done'&&selectedTask.status!=='Pending Review'){updates.status=selectedTask.requireReview?'Pending Review':'Done';setShowConfetti(true);setTimeout(()=>setShowConfetti(false),2000);}updateTask(selectedTask.id,updates);};
             const handlePhotoUpload=async(e)=>{const file=e.target.files[0];if(file){try{const b64=await compressImage(file);setNewTaskPhoto(b64);setFlash(true);setTimeout(()=>setFlash(false),500);}catch(err){console.error(err);}}};
             const handleAddAssignee=(name)=>{if(!selectedTask)return;let current=[...selectedTask.assignees];if(current.includes(name))current=current.filter(n=>n!==name);else{if(current.includes('Unassigned'))current=current.filter(n=>n!=='Unassigned');current.push(name);}updateTask(selectedTask.id,{assignees:current});};
-            const handleSaveMember=()=>{if(!memberFormName)return;const memberData={name:memberFormName,email:memberFormEmail,role:memberFormRole||'Manager',store:memberFormStore||'UTC'};if(editingMemberId){const updatedTeam=team.map(m=>m.id===editingMemberId?{...m,...memberData}:m);setTeam(updatedTeam);localStorage.setItem(KEY_TEAM,JSON.stringify(updatedTeam));setEditingMemberId(null);}else{const newId=Date.now().toString();const newTeam=[...team,{...memberData,id:newId}];setTeam(newTeam);localStorage.setItem(KEY_TEAM,JSON.stringify(newTeam));}setMemberFormName('');setMemberFormEmail('');setMemberFormRole('Manager');setMemberFormStore('UTC');};
-            const handleEditMember=(m)=>{setMemberFormName(m.name);setMemberFormEmail(m.email);setMemberFormRole(m.role);setEditingMemberId(m.id);};
+            const handleSaveMember = () => {
+            if (!memberFormName) return;
+            const isAreaManager = profile && profile.role === 'Area Manager';
+            const safeRole = !isAreaManager && memberFormRole === 'Area Manager'
+                ? 'Manager'
+                : (memberFormRole || 'Manager');
+
+            const memberData = {
+                name: memberFormName,
+                email: memberFormEmail,
+                role: safeRole,
+                store: memberFormStore || 'UTC',
+            };
+
+            if (editingMemberId) {
+                const updatedTeam = team.map(m =>
+                    m.id === editingMemberId ? { ...m, ...memberData } : m
+                );
+                setTeam(updatedTeam);
+                localStorage.setItem(KEY_TEAM, JSON.stringify(updatedTeam));
+
+                // keep profile in sync if you edited yourself
+                const updated = updatedTeam.find(m => m.id === editingMemberId);
+                if (updated && profile && norm(updated.name) === norm(profile.name)) {
+                    const newProfile = {
+                        ...profile,
+                        role: updated.role,
+                        store: updated.store,
+                    };
+                    setProfile(newProfile);
+                    localStorage.setItem(KEY_USER, JSON.stringify(newProfile));
+
+                    // if no longer Area Manager, hide toggle & lock to your store
+                    if (updated.role !== 'Area Manager') {
+                        setStoreFilter(updated.store || 'UTC');
+                    }
+                }
+
+                setEditingMemberId(null);
+            } else {
+                const newId = Date.now().toString();
+                const newTeam = [...team, { ...memberData, id: newId }];
+                setTeam(newTeam);
+                localStorage.setItem(KEY_TEAM, JSON.stringify(newTeam));
+            }
+
+            setMemberFormName('');
+            setMemberFormEmail('');
+            setMemberFormRole('Manager');
+            setMemberFormStore('UTC');
+        };const handleEditMember=(m)=>{setMemberFormName(m.name);setMemberFormEmail(m.email);setMemberFormRole(m.role);setEditingMemberId(m.id);};
             const handleCancelEdit=()=>{setMemberFormName('');setMemberFormEmail('');setMemberFormRole('Manager');setEditingMemberId(null);};
             const handleDeleteMember=(id)=>{if(!confirm("Remove?"))return;const newTeam=team.filter(m=>m.id!==id);setTeam(newTeam);localStorage.setItem(KEY_TEAM,JSON.stringify(newTeam));if(editingMemberId===id)handleCancelEdit();};
             const downloadBackup=()=>{const backup={date:new Date().toISOString(),user:profile,team:team,tasks:activeTasks};const dataStr="data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(backup));const a=document.createElement('a');a.href=dataStr;a.download="workpulse_backup.json";document.body.appendChild(a);a.click();a.remove();};
@@ -270,27 +331,43 @@
                     ? (storeFilter && storeFilter !== 'ALL' ? storeFilter : null)
                     : (profile.store || null);
                 if (effectiveStore) {
-                    displayTasks = displayTasks.filter(t => !t.store || t.store === effectiveStore);
+                    const myName = profile.name ? norm(profile.name) : '';
+                    displayTasks = displayTasks.filter(t => {
+                        const isMyPrivate = !!t.isPrivate && t.ownerName && norm(t.ownerName) === myName;
+                        if (isMyPrivate) return true;
+                        return !t.store || t.store === effectiveStore;
+                    });
                 }
             }
             // Local Filter
-            if (viewMode !== 'history' && viewMode !== 'kanban' && pageMode === 'my-work' && profile) { const myName = norm(profile.name); displayTasks = displayTasks.filter(t => { const safe = getSafeAssignees(t); return safe.some(a => norm(a) === myName) || safe.includes('Everyone'); }); }
+            if (viewMode !== 'history' && viewMode !== 'kanban' && pageMode === 'my-work' && profile) {
+                const myName = norm(profile.name);
+                displayTasks = displayTasks.filter(t => {
+                    const safe = getSafeAssignees(t);
+                    const isMine = safe.some(a => norm(a) === myName) || safe.includes('Everyone');
+                    const isPrivate = !!t.isPrivate;
+                    const ownerName = t.ownerName || '';
+                    const isOwner = norm(ownerName) === myName;
+                    if (isPrivate) {
+                        return isOwner;
+                    }
+                    return isMine;
+                });
+            } else if (profile) {
+                const myName = norm(profile.name);
+                displayTasks = displayTasks.filter(t => {
+                    if (t.isPrivate) {
+                        const ownerName = t.ownerName || '';
+                        return norm(ownerName) === myName;
+                    }
+                    return true;
+                });
+            }
+
             if (filterQuery) { const q = norm(filterQuery); displayTasks = displayTasks.filter(t => norm(t.title).includes(q) || getSafeAssignees(t).some(a => norm(a).includes(q))); }
             if (viewMode === 'list' || pageMode === 'my-work') { displayTasks.sort((a,b) => { const scoreA = PRIORITIES[a.priority]?.score || 2; const scoreB = PRIORITIES[b.priority]?.score || 2; return scoreB - scoreA; }); }
             
-            
-            let visibleTeam = team;
-            if (profile) {
-                const isAreaManager = profile.role === 'Area Manager';
-                const effectiveStore = isAreaManager
-                    ? (storeFilter && storeFilter !== 'ALL' ? storeFilter : null)
-                    : (profile.store || null);
-                if (effectiveStore) {
-                    visibleTeam = team.filter(m => !m.store || m.store === effectiveStore);
-                }
-            }
-
-const fohTasks = displayTasks.filter(t => t.department === 'FOH');
+            const fohTasks = displayTasks.filter(t => t.department === 'FOH');
             const bohTasks = displayTasks.filter(t => t.department === 'BOH');
 
             const mainBg = isDarkMode ? 'theme-dark-bg' : 'theme-light-bg';
@@ -298,8 +375,49 @@ const fohTasks = displayTasks.filter(t => t.department === 'FOH');
             const headerBg = isDarkMode ? 'glass-header-dark' : 'glass-header-light';
             const textPrimary = isDarkMode ? 'text-slate-200' : 'text-slate-900'; 
             const textSecondary = isDarkMode ? 'text-slate-400' : 'text-slate-500';
+            const assignableTeamForNewTask = React.useMemo(() => {
+                if (!profile) return team;
 
-            const myPendingTasks = activeTasks.filter(t => { const safe = getSafeAssignees(t); return (safe.includes(profile?.name) || safe.includes('Everyone')) && t.status !== 'Done'; }).length;
+                const isAreaManager = profile.role === 'Area Manager';
+                const myStore = profile.store || null;
+
+                let base;
+                if (isAreaManager) {
+                    // Area Manager: filter by active store toggle when set, otherwise fall back to their own store or everyone
+                    if (storeFilter && storeFilter !== 'ALL') {
+                        base = team.filter(m => m.store === storeFilter);
+                    } else if (myStore) {
+                        base = team.filter(m => m.store === myStore);
+                    } else {
+                        base = team.slice();
+                    }
+                } else {
+                    // Store Leader / Manager: default to their own store when available
+                    if (myStore) {
+                        base = team.filter(m => m.store === myStore);
+                    } else {
+                        base = team.slice();
+                    }
+                }
+
+                // Always include all Area Managers in the assignee list, regardless of store
+                const areaManagers = team.filter(m => m.role === 'Area Manager');
+                const existingIds = new Set(base.map(m => m.id));
+                areaManagers.forEach(m => {
+                    if (!existingIds.has(m.id)) base.push(m);
+                });
+
+                return base;
+            }, [team, profile, storeFilter]);
+
+
+            const myPendingTasks = activeTasks.filter(t => {
+                const safe = getSafeAssignees(t);
+                const myName = profile?.name ? norm(profile.name) : '';
+                const isMine = safe.some(a => norm(a) === myName) || safe.includes('Everyone');
+                const isPrivate = !!t.isPrivate && t.ownerName && norm(t.ownerName) === myName;
+                return (isMine || isPrivate) && t.status !== 'Done';
+            }).length;
             const overdueTasks = activeTasks.filter(t => t.dueDate && t.status !== 'Done' && t.dueDate < new Date().toISOString().split('T')[0]).length;
             const stuckTasks = activeTasks.filter(t => !!t.stuckReason).length;
 
@@ -315,6 +433,7 @@ const fohTasks = displayTasks.filter(t => t.department === 'FOH');
             const TaskRow = ({ task }) => {
                 const safeAssignees = getSafeAssignees(task);
                 const urgency = getUrgency(task.dueDate, task.status);
+                const isPrivate = !!task.isPrivate;
                 const config = STATUS_CONFIG[task.status] || { light: 'bg-slate-100', dark: 'bg-slate-800' };
                 const isExpanded = expandedTasks[task.id];
                 const p = PRIORITIES[task.priority] || PRIORITIES['Medium'];
@@ -339,7 +458,13 @@ const fohTasks = displayTasks.filter(t => t.department === 'FOH');
                                         {!needsReview && task.status !== 'Done' && <span className={`text-[10px] border px-2 py-0.5 rounded-full font-medium ${isDarkMode?'border-slate-600/50 text-slate-400':'border-slate-200 text-slate-500 bg-white'}`}>Fast Track</span>}
                                     </div>
                                 </div>
-                            </div>
+                            
+                                        {task.isPrivate && (
+                                            <span className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full border font-semibold ${isDarkMode ? 'bg-pink-900/40 text-pink-200 border-pink-600/60' : 'bg-pink-50 text-pink-700 border-pink-200'}`}>
+                                                <Icon name="Lock" size={10} /> Private
+                                            </span>
+                                        )}
+</div>
                             <div className="hidden md:flex col-span-1 items-center"><span className={`text-[10px] font-bold px-3 py-1 rounded-full border ${isDarkMode ? p.dark : p.light}`}>{task.priority || 'Medium'}</span></div>
                             
                             {/* V103: FULL NAME PILLS */}
@@ -382,7 +507,7 @@ const fohTasks = displayTasks.filter(t => t.department === 'FOH');
                                     <button onClick={() => setViewMode('history')} className={`p-2 rounded-full transition-all ${viewMode === 'history' ? (isDarkMode?'bg-slate-700 text-white shadow':'bg-white shadow text-indigo-600') : 'text-slate-400 hover:text-slate-500'}`}><Icon name="History" size={18}/></button>
                                 </div>
                                 {profile.role === 'Area Manager' && (
-                                    <div className={`hidden md:flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-semibold border ${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-200' : 'bg-white/60 border-slate-200 text-slate-600'}`}>
+                                    <div className={`flex items-center max-w-full overflow-x-auto scrollbar-hide gap-1 px-2 py-1 rounded-full text-[11px] font-semibold border ${isDarkMode ? 'bg-slate-800 border-slate-700 text-slate-200' : 'bg-white/60 border-slate-200 text-slate-600'}`}>
                                         <span className="uppercase tracking-wider mr-1 text-[10px] opacity-70">Store</span>
                                         <button onClick={() => setStoreFilter('ALL')} className={`px-2 py-0.5 rounded-full ${storeFilter==='ALL' ? (isDarkMode?'bg-indigo-600 text-white':'bg-indigo-600 text-white') : 'hover:bg-slate-700/30'}`}>All</button>
                                         <button onClick={() => setStoreFilter('UTC')} className={`px-2 py-0.5 rounded-full ${storeFilter==='UTC' ? (isDarkMode?'bg-emerald-500 text-slate-900':'bg-emerald-500 text-white') : 'hover:bg-slate-700/30'}`}>UTC</button>
@@ -507,6 +632,7 @@ const fohTasks = displayTasks.filter(t => t.department === 'FOH');
                                                                         {tasksInCol.length === 0 && <div className="h-full flex items-center justify-center opacity-20"><Icon name="ClipboardList" size={48} className={isDarkMode?'text-slate-600':'text-slate-400'}/> <span className="block mt-2 text-xs font-bold text-slate-500 uppercase">No tasks</span></div>}
                                                                         {tasksInCol.map(task => {
                                                                             const urgency = getUrgency(task.dueDate, task.status);
+                const isPrivate = !!task.isPrivate;
                                                                             const p = PRIORITIES[task.priority] || PRIORITIES['Medium'];
                                                                             const isTaskStuck = !!task.stuckReason;
                                                                             const cardClasses = isTaskStuck ? (isDarkMode ? 'card-stuck-dark' : 'card-stuck-light') : (isDarkMode?'glass-card-dark':'bg-white border-white hover:border-indigo-100');
@@ -516,8 +642,25 @@ const fohTasks = displayTasks.filter(t => t.department === 'FOH');
                                                                                  {isTaskStuck && <div className="flex items-center gap-1 text-red-500 font-bold text-[10px] mb-2 uppercase tracking-wider"><Icon name="AlertTriangle" size={12}/> {task.stuckReason}</div>}
                                                                                 <div className="flex justify-between items-start mb-3"><span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${isDarkMode ? p.dark : p.light}`}>{task.priority || 'Medium'}</span>{task.dueDate && <span className={`text-[10px] font-mono font-medium ${urgency.color}`}>{formatDate(task.dueDate+'T00:00:00')}</span>}</div>
                                                                                 <p className={`text-sm font-bold mb-4 line-clamp-3 leading-relaxed ${textPrimary}`}>{task.title}</p>
+                                                                                {isPrivate && (
+                                                                                    <div className="mt-2 inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full border font-semibold shadow-sm
+                                                                                        ${isDarkMode ? 'bg-pink-900/40 text-pink-200 border-pink-600/60' : 'bg-pink-50 text-pink-700 border-pink-200'}">
+                                                                                        <Icon name="Lock" size={10} /> Private
+                                                                                    </div>
+                                                                                )}
+
                                                                                 <div className={`flex items-center justify-between pt-3 border-t ${isDarkMode?'border-slate-700/50':'border-slate-50'}`}>
-                                                                                    <div className="flex -space-x-1.5">{getSafeAssignees(task).map((a,i)=>(<div key={i} className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-[9px] font-bold shadow-sm ${isDarkMode?'border-slate-700':'border-white'} ${getRolePill(getMemberRole(a))}`} title={a}>{a.charAt(0)}</div>))}</div>
+                                                                                    <div className="flex flex-wrap gap-1">
+                                                                                    {getSafeAssignees(task).map((a, i) => (
+                                                                                        <span
+                                                                                            key={i}
+                                                                                            className={`text-[10px] px-2.5 py-1 rounded-full font-bold border truncate max-w-[120px] ${getRolePill(getMemberRole(a))}`}
+                                                                                            title={a}
+                                                                                        >
+                                                                                            {a}
+                                                                                        </span>
+                                                                                    ))}
+                                                                                </div>
                                                                                     <div className={`flex gap-3 transition-colors ${isDarkMode?'text-slate-500 group-hover:text-indigo-300':'text-slate-300 group-hover:text-indigo-400'}`}>
                                                                                         {task.description && <Icon name="AlignLeft" size={14} />}
                                                                                         {task.photo && <Icon name="Image" size={14} />}
@@ -559,7 +702,7 @@ const fohTasks = displayTasks.filter(t => t.department === 'FOH');
                                     <div className="space-y-4">
                                         <input type="text" value={tempName} onChange={e => setTempName(e.target.value)} className={`w-full p-4 border rounded-2xl text-sm font-medium outline-none transition-all ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white focus:border-indigo-500' : 'bg-white/50 border-slate-200 text-slate-900 focus:ring-2 focus:ring-indigo-500'}`} placeholder="Full Name" />
                                         <input type="email" value={tempEmail} onChange={e => setTempEmail(e.target.value)} className={`w-full p-4 border rounded-2xl text-sm font-medium outline-none transition-all ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white focus:border-indigo-500' : 'bg-white/50 border-slate-200 text-slate-900 focus:ring-2 focus:ring-indigo-500'}`} placeholder="Work Email" />
-                                        <select value={tempRole} onChange={e => setTempRole(e.target.value)} className={`w-full p-4 border rounded-2xl text-sm font-medium outline-none ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white/50 border-slate-200'}`}>{ROLES.map(r => <option key={r}>{r}</option>)}</select>
+                                        <select value={tempRole} onChange={e => setTempRole(e.target.value)} className={`w-full p-4 border rounded-2xl text-sm font-medium outline-none ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white/50 border-slate-200'}`}>{(team.length === 0 ? ROLES : ROLES.filter(r => r !== 'Area Manager')).map(r => <option key={r} value={r}>{r}</option>)}</select>
                                         <div className="flex gap-3 pt-4"><button onClick={() => setModal(null)} className={`flex-1 py-3 font-bold rounded-2xl transition-colors ${isDarkMode ? 'text-slate-400 hover:bg-slate-800' : 'text-slate-500 hover:bg-slate-100'}`}>Cancel</button><button onClick={handleJoin} className="flex-1 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-2xl shadow-lg hover:opacity-90">Join</button></div>
                                     </div>
                                 </div>
@@ -573,7 +716,7 @@ const fohTasks = displayTasks.filter(t => t.department === 'FOH');
                                         <div className="space-y-3">
                                             <input type="text" value={memberFormName} onChange={e => setMemberFormName(e.target.value)} className={`w-full p-3 border rounded-2xl text-sm outline-none ${isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-white border-slate-200'}`} placeholder="Name" />
                                             <input type="email" value={memberFormEmail} onChange={e => setMemberFormEmail(e.target.value)} className={`w-full p-3 border rounded-2xl text-sm outline-none ${isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-white border-slate-200'}`} placeholder="Email" />
-                                            <select value={memberFormRole} onChange={e => setMemberFormRole(e.target.value)} className={`w-full p-3 border rounded-2xl text-sm outline-none ${isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-white border-slate-200'}`}>{ROLES.map(r => <option key={r}>{r}</option>)}</select>
+                                            <select value={memberFormRole} onChange={e => setMemberFormRole(e.target.value)} className={`w-full p-3 border rounded-2xl text-sm outline-none ${isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-white border-slate-200'}`}>{((profile && profile.role === 'Area Manager') ? ROLES : ROLES.filter(r => r !== 'Area Manager')).map(r => <option key={r} value={r}>{r}</option>)}</select>
                                             <select value={memberFormStore} onChange={e => setMemberFormStore(e.target.value)} className={`w-full p-3 border rounded-2xl text-sm outline-none ${isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-white border-slate-200'}`}>
                                                 <option value="UTC">UTC</option>
                                                 <option value="IRV">IRV</option>
@@ -596,8 +739,15 @@ const fohTasks = displayTasks.filter(t => t.department === 'FOH');
                                             <div><label className={`text-xs font-bold uppercase ml-1 mb-1 block ${textSecondary}`}>Priority</label><select value={newTaskPriority} onChange={e => setNewTaskPriority(e.target.value)} className={`w-full p-3 border rounded-2xl text-sm outline-none ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200'}`}>{Object.keys(PRIORITIES).map(p => <option key={p} value={p}>{p}</option>)}</select></div>
                                             <div><label className={`text-xs font-bold uppercase ml-1 mb-1 block ${textSecondary}`}>Due Date</label><input type="date" value={newTaskDueDate} onChange={e => setNewTaskDueDate(e.target.value)} className={`w-full p-3 border rounded-2xl text-sm outline-none font-mono ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200'}`} /></div>
                                         </div>
-                                        <div className="space-y-2"><label className={`text-xs font-bold uppercase ml-1 ${textSecondary}`}>Assignees</label><div className={`flex flex-wrap gap-2 p-3 border rounded-3xl max-h-32 overflow-y-auto ${isDarkMode ? 'border-slate-700 bg-slate-800/50' : 'border-slate-100'}`}><button onClick={() => { if(newTaskAssignees.includes('Everyone')) setNewTaskAssignees(newTaskAssignees.filter(n=>n!=='Everyone')); else setNewTaskAssignees([...newTaskAssignees,'Everyone']); }} className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${newTaskAssignees.includes('Everyone')?'bg-indigo-600 text-white border-indigo-600 shadow-md':(isDarkMode?'bg-slate-800 border-slate-600 text-slate-300':'bg-white text-slate-500 border-slate-200')}`}>Everyone</button>{visibleTeam.map((m,i)=><button key={i} onClick={() => { if(newTaskAssignees.includes(m.name)) setNewTaskAssignees(newTaskAssignees.filter(n=>n!==m.name)); else setNewTaskAssignees([...newTaskAssignees,m.name]); }} className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${newTaskAssignees.includes(m.name)?'bg-indigo-600 text-white border-indigo-600 shadow-md':(isDarkMode?'bg-slate-800 border-slate-600 text-slate-300':'bg-white text-slate-500 border-slate-200')}`}>{m.name}</button>)}</div></div>
+                                        <div className="space-y-2"><label className={`text-xs font-bold uppercase ml-1 ${textSecondary}`}>Assignees</label><div className={`flex flex-wrap gap-2 p-3 border rounded-3xl max-h-32 overflow-y-auto ${isDarkMode ? 'border-slate-700 bg-slate-800/50' : 'border-slate-100'}`}><button onClick={() => { if(newTaskAssignees.includes('Everyone')) setNewTaskAssignees(newTaskAssignees.filter(n=>n!=='Everyone')); else setNewTaskAssignees([...newTaskAssignees,'Everyone']); }} className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${newTaskAssignees.includes('Everyone')?'bg-indigo-600 text-white border-indigo-600 shadow-md':(isDarkMode?'bg-slate-800 border-slate-600 text-slate-300':'bg-white text-slate-500 border-slate-200')}`}>Everyone</button>{assignableTeamForNewTask.map((m,i)=><button key={i} onClick={() => { if(newTaskAssignees.includes(m.name)) setNewTaskAssignees(newTaskAssignees.filter(n=>n!==m.name)); else setNewTaskAssignees([...newTaskAssignees,m.name]); }} className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${newTaskAssignees.includes(m.name)?'bg-indigo-600 text-white border-indigo-600 shadow-md':(isDarkMode?'bg-slate-800 border-slate-600 text-slate-300':'bg-white text-slate-500 border-slate-200')}`}>{m.name}</button>)}</div></div>
                                         <div className="grid grid-cols-2 gap-4"><div><label className={`text-xs font-bold uppercase ml-1 mb-1 block ${textSecondary}`}>Dept</label><select value={newTaskDept} onChange={e => setNewTaskDept(e.target.value)} className={`w-full p-3 border rounded-2xl text-sm outline-none ${isDarkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200'}`}>{DEPARTMENTS.map(d => <option key={d}>{d}</option>)}</select></div><div className={`flex items-center gap-3 p-3 border rounded-2xl cursor-pointer transition-colors ${isDarkMode ? 'bg-slate-800 border-slate-700 hover:bg-slate-700' : 'bg-indigo-50/50 border-indigo-100 hover:bg-indigo-50'}`} onClick={() => setNewTaskRequireReview(!newTaskRequireReview)}><div className={`w-5 h-5 rounded-full flex items-center justify-center border ${newTaskRequireReview ? 'bg-indigo-600 border-indigo-600' : 'border-slate-400'}`}>{newTaskRequireReview && <Icon name="Check" size={12} className="text-white" />}</div><span className={`text-xs font-semibold ${textPrimary}`}>Review Needed</span></div></div>
+                                        <div className="flex items-center gap-3 mt-2 p-3 border rounded-2xl cursor-pointer transition-colors text-xs font-semibold"
+                                             onClick={() => setNewTaskPrivate(!newTaskPrivate)}>
+                                            <div className={`w-5 h-5 rounded-full flex items-center justify-center border ${newTaskPrivate ? 'bg-pink-500 border-pink-500' : (isDarkMode ? 'border-slate-500 bg-slate-900' : 'border-slate-400 bg-white')}`}>
+                                                {newTaskPrivate && <Icon name="Lock" size={12} className="text-white" />}
+                                            </div>
+                                            <span className={textPrimary}>Private to me (only visible in My Work)</span>
+                                        </div>
                                         <label className="flex items-center justify-center gap-2 w-full h-14 border border-dashed border-slate-300 rounded-2xl cursor-pointer hover:bg-slate-50 hover:border-slate-400 transition-all text-slate-500 hover:text-slate-700"><Icon name="Camera" size={18} /><span className="text-sm font-medium">{newTaskPhoto ? "Photo Attached" : "Attach Photo"}</span><input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} /></label>
                                         <a href={(!newTaskTitle || !newTaskDueDate) ? '#' : `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(newTaskTitle)}&dates=${formatCalDate(newTaskDueDate)}/${getNextDay(newTaskDueDate)}&details=${encodeURIComponent("WorkPulse Task - Tip: Set Visibility to 'Private' to hide details from others.")}&add=${getAssigneeEmails({assignees: newTaskAssignees})}`} target="_blank" className={`w-full py-3 mb-2 rounded-2xl border flex items-center justify-center gap-2 font-bold text-sm transition-all ${(!newTaskTitle || !newTaskDueDate) ? (isDarkMode?'bg-slate-800 text-slate-600 border-slate-700':'bg-slate-50 text-slate-300 border-slate-100') : (isDarkMode ? 'bg-slate-800 text-indigo-400 border-slate-700 hover:bg-slate-700' : 'bg-white text-indigo-600 border-indigo-200 hover:bg-indigo-50')}`} onClick={(e) => { if(!newTaskTitle || !newTaskDueDate) e.preventDefault(); }}><Icon name="CalendarPlus" size={18} /> Schedule on G-Cal</a>
                                         <div className="flex gap-3 pt-2"><button onClick={() => setModal(null)} className={`flex-1 py-3.5 font-bold rounded-2xl transition-colors ${isDarkMode ? 'text-slate-400 hover:bg-slate-800' : 'text-slate-500 hover:bg-slate-100'}`}>Cancel</button><button onClick={handleCreateTask} className="flex-1 py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-2xl shadow-lg hover:opacity-90">Create Task</button></div>
@@ -627,6 +777,13 @@ const fohTasks = displayTasks.filter(t => t.department === 'FOH');
                                                         const p = PRIORITIES[selectedTask.priority] || PRIORITIES['Medium'];
                                                         return <span className={`text-[10px] font-bold px-2 py-1 rounded-full border ${isDarkMode ? p.dark : p.light}`}>{selectedTask.priority || 'Medium'}</span>;
                                                     })()}
+
+                                                    {selectedTask.isPrivate && (
+                                                        <span className={`inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-full border font-semibold
+                                                            ${isDarkMode ? 'bg-pink-900/40 text-pink-200 border-pink-600/60' : 'bg-pink-50 text-pink-700 border-pink-200'}`}>
+                                                            <Icon name="Lock" size={12} /> Private to you
+                                                        </span>
+                                                    )}
                                                     
                                                     {viewMode !== 'history' && <button onClick={handleToggleStuck} className={`p-2 rounded-full border ${!!selectedTask.stuckReason ? 'bg-red-100 text-red-600 border-red-200' : (isDarkMode?'text-slate-500 border-slate-700 hover:text-red-400':'text-slate-400 border-slate-200 hover:text-red-500')}`} title="Report Issue / Stuck"><Icon name="AlertTriangle" size={16}/></button>}
                                                 </div>
