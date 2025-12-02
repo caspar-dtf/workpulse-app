@@ -455,7 +455,7 @@
                                         {task.photo && <Icon name="Camera" size={14} className={isDarkMode ? "text-indigo-300/70" : "text-indigo-500"}/>}
                                         {totalSub > 0 && <span className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full border font-bold ${doneSub === totalSub ? (isDarkMode?'bg-green-900/40 text-green-300 border-green-800':'bg-green-50 text-green-700 border-green-200') : (isDarkMode?'bg-orange-900/40 text-orange-300 border-orange-800':'bg-orange-50 text-orange-700 border-orange-200')}`}><Icon name="ListTodo" size={10} /> {doneSub}/{totalSub}</span>}
                                         {task.comments?.length > 0 && <span className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full ${isDarkMode?'bg-slate-700/50 text-slate-300':'bg-slate-100 text-slate-500'}`}><Icon name="MessageCircle" size={10} /> {task.comments.length}</span>}
-                                        {!needsReview && task.status !== 'Done' && <span className={`text-[10px] border px-2 py-0.5 rounded-full font-medium ${isDarkMode?'border-slate-600/50 text-slate-400':'border-slate-200 text-slate-500 bg-white'}`}>Fast Track</span>}
+                                        
                                     </div>
                                 </div>
                             
@@ -578,7 +578,7 @@
                                 )}
                                 
                                 {/* V103: LIST HEADER ADDED HERE */}
-                                {viewMode === 'list' && (
+                                {false && viewMode === 'list' && (
                                     <div className={`grid grid-cols-12 gap-4 px-6 py-3 mb-2 border-b text-[10px] uppercase font-bold tracking-wider ${isDarkMode ? 'text-slate-500 border-slate-800' : 'text-slate-400 border-slate-200'}`}>
                                         <div className="col-span-5 md:col-span-4">Task / Details</div>
                                         <div className="hidden md:block col-span-1">Priority</div>
@@ -602,7 +602,23 @@
                                                         <div className="flex items-center gap-4"><div className={`p-2.5 rounded-xl shadow-sm ${isDarkMode ? 'bg-slate-700 text-white' : 'bg-white text-indigo-600'}`}><Icon name={colors[1]} size={22} /></div><h3 className={`font-bold text-xl ${textPrimary}`}>{dept}</h3><span className={`text-xs px-3 py-1 rounded-full font-bold border ${isDarkMode?'bg-slate-700 border-slate-600 text-slate-300':'bg-white border-slate-100 text-slate-500 shadow-sm'}`}>{deptTasks.length}</span></div>
                                                         <div className={`text-slate-400 transition-transform duration-300 ${isCollapsed ? '-rotate-90' : ''}`}><Icon name="ChevronDown" size={24} /></div>
                                                     </div>
-                                                    {!isCollapsed && <div className="p-4 md:p-6">{deptTasks.length === 0 && <EmptyState message="No active tasks" />}{deptTasks.map(task => <TaskRow key={task.id} task={task} />)}</div>}
+                                                    {!isCollapsed && (
+                                                    <div className="p-4 md:p-6">
+                                                        {deptTasks.length > 0 && (
+                                                            <div className={`grid grid-cols-12 gap-4 px-2 pb-2 mb-2 text-[10px] uppercase font-bold tracking-wider ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                                                                <div className="col-span-5 md:col-span-4">Task / Details</div>
+                                                                <div className="hidden md:block col-span-1">Priority</div>
+                                                                <div className="hidden md:block col-span-2">Assigned To</div>
+                                                                <div className="col-span-3 md:col-span-2 text-center">Status</div>
+                                                                <div className="hidden md:block col-span-1">Created</div>
+                                                                <div className="hidden md:block col-span-1">Due</div>
+                                                                <div className="col-span-4 md:col-span-1 text-right">Action</div>
+                                                            </div>
+                                                        )}
+                                                        {deptTasks.length === 0 && <EmptyState message="No active tasks" />}
+                                                        {deptTasks.map(task => <TaskRow key={task.id} task={task} />)}
+                                                    </div>
+                                                )}
                                                 </div>
                                             );
                                         })}
