@@ -110,27 +110,97 @@
         const getUrgency = (dueDateStr, status) => { 
             if (!dueDateStr || status === 'Done') return { color: 'text-slate-400', icon: null }; 
             try {
-                const today = new Date(); today.setHours(0,0,0,0); const due = new Date(dueDateStr + 'T00:00:00'); 
+                const today = new Date(); 
+                today.setHours(0,0,0,0); 
+                const due = new Date(dueDateStr + 'T00:00:00'); 
+                if (isNaN(due.getTime())) return { color: 'text-slate-400', icon: null }; 
                 const diffDays = Math.ceil((due - today) / (1000 * 60 * 60 * 24)); 
                 if (diffDays < 0) return { color: 'text-red-500 font-bold', icon: 'AlertCircle' }; 
                 if (diffDays <= 3) return { color: 'text-amber-500 font-bold', icon: 'Clock' }; 
-            } catch(e) { return { color: 'text-slate-400', icon: null }; }
+            } catch(e) { 
+                return { color: 'text-slate-400', icon: null }; 
+            }
             return { color: 'text-slate-400', icon: null }; 
         };
 
         const Icon = ({ name, size = 20, className = "" }) => { 
+            if (!name || typeof name !== 'string') return null;
             if (!window.lucide || !window.lucide.icons) return null; 
             const iconData = window.lucide.icons[name.charAt(0).toUpperCase() + name.slice(1)]; 
             if (!iconData) return <span style={{width:size, height:size, display:'inline-block'}} />; 
             return <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{iconData.map(([tag, attrs], i) => { const ReactTag = tag; const reactAttrs = Object.keys(attrs).reduce((acc, key) => { acc[key.replace(/-([a-z])/g, (g) => g[1].toUpperCase())] = attrs[key]; return acc; }, {}); return <ReactTag key={i} {...reactAttrs} />; })}</svg>; 
         };
 
-        const StatusPill = ({ status, onClick, isDarkMode }) => {
-            const config = STATUS_CONFIG[status] || { light: 'bg-slate-100', dark: 'bg-slate-800' }; 
-            return <button onClick={onClick} className={`${isDarkMode ? config.dark : config.light} text-[10px] font-bold uppercase px-4 py-1.5 rounded-full border w-32 text-center transition-all active:scale-95 hover:opacity-90 tracking-wider shadow-sm border-transparent`}>{status || 'Unknown'}</button>;
+        const StatusPill = ({ task, isDarkMode, onChangeStatus }) => {
+            const [open, setOpen] = React.useState(false);
+            const status = task && task.status ? task.status : 'To Do';
+            const config = STATUS_CONFIG[status] || { light: 'bg-slate-100 text-slate-700', dark: 'bg-slate-800 text-slate-100' };
+
+            const toggle = (e) => {
+                if (e && e.stopPropagation) e.stopPropagation();
+                setOpen(o => !o);
+            };
+
+            const handleSelect = (newStatus, e) => {
+                if (e && e.stopPropagation) e.stopPropagation();
+                setOpen(false);
+                if (onChangeStatus && task) onChangeStatus(task, newStatus);
+            };
+
+            const statusOptions = ['To Do','In Progress','Pending Review','Done'];
+
+            return (
+                <div className="relative inline-block text-left">
+                    <button
+                        type="button"
+                        onClick={toggle}
+                        className={`${isDarkMode ? config.dark : config.light} inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-semibold border cursor-pointer transition-all active:scale-95 hover:opacity-90 tracking-wide`}
+                    >
+                        <span>{status || 'Unknown'}</span>
+                        <Icon name="ChevronDown" size={14} className="opacity-80" />
+                    </button>
+                    {open && (
+                        <div className={`${isDarkMode ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'} absolute right-0 bottom-full mb-1 w-40 rounded-xl border shadow-lg text-xs z-50`}>
+                            {statusOptions.map(opt => {
+                                const isCurrent = opt === status;
+                                return (
+                                    <button
+                                        key={opt}
+                                        type="button"
+                                        onClick={(e) => handleSelect(opt, e)}
+                                        className={`w-full text-left px-3 py-1.5 flex items-center justify-between ${
+                                            isCurrent
+                                                ? (isDarkMode ? 'bg-slate-800 text-white font-semibold' : 'bg-indigo-50 text-indigo-700 font-semibold')
+                                                : (isDarkMode ? 'hover:bg-slate-800 text-slate-200' : 'hover:bg-slate-100 text-slate-600')
+                                        }`}
+                                    >
+                                        <span>{opt}</span>
+                                        {isCurrent && <Icon name="Check" size={12} />}
+                                    </button>
+                                );
+                            })}
+                            {task && task.status === 'Done' && (
+                                <div className={`${isDarkMode ? 'border-slate-700' : 'border-slate-200'} border-t mt-1 pt-1`}>
+                                    <button
+                                        type="button"
+                                        onClick={(e) => handleSelect('Archive', e)}
+                                        className={`w-full text-left px-3 py-1.5 flex items-center gap-2 text-[11px] ${
+                                            isDarkMode ? 'text-red-300 hover:bg-red-900/40' : 'text-red-600 hover:bg-red-50'
+                                        }`}
+                                    >
+                                        <Icon name="Archive" size={12} />
+                                        <span>Archive task</span>
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            );
         };
 
-        const ProgressBattery = ({ tasks, isDarkMode }) => { 
+        
+const ProgressBattery = ({ tasks, isDarkMode }) => { 
             const total = tasks.length; if (total === 0) return null; 
             const getBatColor = (t) => {
                 if(t.stuckReason) return 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]';
@@ -257,6 +327,55 @@
             const handleJoin=()=>{if(!tempName)return alert("Required");const u={id:Date.now().toString(),name:tempName.trim(),email:tempEmail,role:tempRole,store:tempStore||'UTC'};setProfile(u);localStorage.setItem(KEY_USER,JSON.stringify(u));setModal(null);const exists=team.find(m=>norm(m.name)===norm(u.name));if(!exists){const newTeam=[...team,u];setTeam(newTeam);localStorage.setItem(KEY_TEAM,JSON.stringify(newTeam));}};
             const handleCreateTask=()=>{if(!newTaskTitle)return;const finalAssignees=newTaskAssignees.length>0?newTaskAssignees:['Unassigned'];let autoSubtasks=[];if(newTaskAssignees.includes('Everyone')&&team.length>0)autoSubtasks=team.map(m=>({id:Date.now()+Math.random().toString(),text:m.name,completed:false}));const t={id:Date.now().toString(),title:newTaskTitle,description:newTaskDesc,status:'To Do',department:newTaskDept,priority:newTaskPriority,assignees:finalAssignees,creatorName:profile.name,creatorRole:profile.role,dueDate:newTaskDueDate,photo:newTaskPhoto,comments:[],subtasks:autoSubtasks,archived:false,requireReview:newTaskRequireReview,createdAt:new Date().toISOString(),isPrivate:newTaskPrivate,ownerName:profile&&profile.name?profile.name:'',store:profile&&profile.store?profile.store:'UTC', stuckReason: ''};db.collection('tasks_v2').doc(t.id).set(t).then(()=>{setModal(null);setNewTaskTitle('');setNewTaskDesc('');setNewTaskPhoto(null);setNewTaskAssignees([]);setNewTaskRequireReview(true);}).catch(err=>alert("Error saving: "+err.message));};
             const cycleStatus=(task,e)=>{if(e&&e.stopPropagation)e.stopPropagation();const safeAssignees=getSafeAssignees(task);const myName=norm(profile.name);const canEdit=safeAssignees.some(a=>norm(a)===myName)||safeAssignees.includes('Everyone')||['Area Manager','Store Leader','Manager'].includes(profile.role)||norm(task.creatorName)===myName;if(!canEdit)return alert(`Access Denied.`);const needsReview=task.requireReview!==false;if(task.status==='Pending Review'&&!['Area Manager','Store Leader','Manager'].includes(profile.role))return alert("Manager approval needed.");let next=STATUS_CONFIG[task.status].next;if(task.status==='In Progress'&&!needsReview)next='Done';if(next==='Archive'){updateTask(task.id,{archived:true});setShowConfetti(true);setTimeout(()=>setShowConfetti(false),2000);return;}updateTask(task.id,{status:next});};
+        const changeStatusExplicit = (task, newStatus) => {
+            const safeAssignees = getSafeAssignees(task);
+            const myName = norm(profile.name);
+            const canEdit = safeAssignees.some(a => norm(a) === myName)
+                || safeAssignees.includes('Everyone')
+                || ['Area Manager','Store Leader','Manager'].includes(profile.role)
+                || norm(task.creatorName) === myName;
+
+            if (!canEdit) {
+                alert('Access Denied.');
+                return;
+            }
+
+            const needsReview = task.requireReview !== false;
+            const isManager = ['Area Manager','Store Leader','Manager'].includes(profile.role);
+
+            // Non-managers still cannot move Pending Review tasks
+            if (task.status === 'Pending Review' && !isManager) {
+                alert('Manager approval needed.');
+                return;
+            }
+
+            // Archive rules: managers only, must be Done, and not assigned to self
+            if (newStatus === 'Archive') {
+                if (!isManager) {
+                    alert('Only managers can archive tasks.');
+                    return;
+                }
+                if (task.status !== 'Done') {
+                    alert('Task must be marked Done before archiving.');
+                    return;
+                }
+                const isAssignee = safeAssignees.some(a => norm(a) === myName);
+                if (isAssignee) {
+                    alert('You cannot archive a task assigned to you. Please ask another manager to archive it.');
+                    return;
+                }
+                updateTask(task.id,{archived:true});
+                setShowConfetti(true);
+                setTimeout(()=>setShowConfetti(false),2000);
+                return;
+            }
+
+            // If same status, no-op
+            if (newStatus && newStatus === task.status) return;
+
+            updateTask(task.id,{status:newStatus});
+        };
+
             const restoreTask=(task)=>updateTask(task.id,{archived:false,status:'In Progress'});
             const updateTask=(id,data)=>{
                 if(activeTasks.find(t=>t.id===id)){ const updated = activeTasks.map(t=>t.id===id?{...t,...data}:t); setActiveTasks(updated); }
@@ -470,7 +589,7 @@
                             {/* V103: FULL NAME PILLS */}
                             <div className="hidden md:flex col-span-2 gap-1.5 flex-wrap">{safeAssignees.map((a,i) => <span key={i} className={`text-[10px] px-2.5 py-1 rounded-full font-bold border truncate max-w-[120px] ${getRolePill(getMemberRole(a))}`}>{a}</span>)}</div>
                             
-                            <div className="col-span-6 md:col-span-2 flex justify-center"><StatusPill status={task.status} onClick={(e)=>cycleStatus(task,e)} isDarkMode={isDarkMode} /></div>
+                            <div className="col-span-6 md:col-span-2 flex justify-center"><StatusPill task={task} onChangeStatus={changeStatusExplicit} isDarkMode={isDarkMode} /></div>
                             
                             {/* V103: DATES */}
                             <div className={`hidden md:block col-span-1 text-[10px] font-mono ${textSecondary}`}>{task.createdAt ? formatDate(task.createdAt) : '-'}</div>
@@ -578,7 +697,7 @@
                                 )}
                                 
                                 {/* V103: LIST HEADER ADDED HERE */}
-                                {false && viewMode === 'list' && (
+                                {viewMode === 'list' && (
                                     <div className={`grid grid-cols-12 gap-4 px-6 py-3 mb-2 border-b text-[10px] uppercase font-bold tracking-wider ${isDarkMode ? 'text-slate-500 border-slate-800' : 'text-slate-400 border-slate-200'}`}>
                                         <div className="col-span-5 md:col-span-4">Task / Details</div>
                                         <div className="hidden md:block col-span-1">Priority</div>
@@ -597,28 +716,12 @@
                                             const colors = dept === 'FOH' ? ['indigo', 'Coffee'] : ['orange', 'Utensils'];
                                             const isCollapsed = collapsedSections[dept];
                                             return (
-                                                <div key={dept} className={`${cardBg} rounded-[2rem] overflow-hidden transition-all shadow-md`}>
+                                                <div key={dept} className={`${cardBg} rounded-[2rem] overflow-visible transition-all shadow-md`}>
                                                     <div onClick={() => toggleSection(dept)} className={`px-6 py-5 border-b ${isDarkMode?'border-slate-700 hover:bg-slate-700/50':'border-white/50 hover:bg-white/40'} flex items-center justify-between cursor-pointer transition-colors`}>
                                                         <div className="flex items-center gap-4"><div className={`p-2.5 rounded-xl shadow-sm ${isDarkMode ? 'bg-slate-700 text-white' : 'bg-white text-indigo-600'}`}><Icon name={colors[1]} size={22} /></div><h3 className={`font-bold text-xl ${textPrimary}`}>{dept}</h3><span className={`text-xs px-3 py-1 rounded-full font-bold border ${isDarkMode?'bg-slate-700 border-slate-600 text-slate-300':'bg-white border-slate-100 text-slate-500 shadow-sm'}`}>{deptTasks.length}</span></div>
                                                         <div className={`text-slate-400 transition-transform duration-300 ${isCollapsed ? '-rotate-90' : ''}`}><Icon name="ChevronDown" size={24} /></div>
                                                     </div>
-                                                    {!isCollapsed && (
-                                                    <div className="p-4 md:p-6">
-                                                        {deptTasks.length > 0 && (
-                                                            <div className={`grid grid-cols-12 gap-4 px-2 pb-2 mb-2 text-[10px] uppercase font-bold tracking-wider ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
-                                                                <div className="col-span-5 md:col-span-4">Task / Details</div>
-                                                                <div className="hidden md:block col-span-1">Priority</div>
-                                                                <div className="hidden md:block col-span-2">Assigned To</div>
-                                                                <div className="col-span-3 md:col-span-2 text-center">Status</div>
-                                                                <div className="hidden md:block col-span-1">Created</div>
-                                                                <div className="hidden md:block col-span-1">Due</div>
-                                                                <div className="col-span-4 md:col-span-1 text-right">Action</div>
-                                                            </div>
-                                                        )}
-                                                        {deptTasks.length === 0 && <EmptyState message="No active tasks" />}
-                                                        {deptTasks.map(task => <TaskRow key={task.id} task={task} />)}
-                                                    </div>
-                                                )}
+                                                    {!isCollapsed && <div className="p-4 md:p-6">{deptTasks.length === 0 && <EmptyState message="No active tasks" />}{deptTasks.map(task => <TaskRow key={task.id} task={task} />)}</div>}
                                                 </div>
                                             );
                                         })}
@@ -667,16 +770,16 @@
 
                                                                                 <div className={`flex items-center justify-between pt-3 border-t ${isDarkMode?'border-slate-700/50':'border-slate-50'}`}>
                                                                                     <div className="flex flex-wrap gap-1">
-                                                                                    {getSafeAssignees(task).map((a, i) => (
-                                                                                        <span
-                                                                                            key={i}
-                                                                                            className={`text-[10px] px-2.5 py-1 rounded-full font-bold border truncate max-w-[120px] ${getRolePill(getMemberRole(a))}`}
-                                                                                            title={a}
-                                                                                        >
-                                                                                            {a}
-                                                                                        </span>
-                                                                                    ))}
-                                                                                </div>
+                                                                {getSafeAssignees(task).map((a, i) => (
+                                                                    <span
+                                                                        key={i}
+                                                                        className={`text-[10px] px-2.5 py-1 rounded-full font-bold border truncate max-w-[120px] ${getRolePill(getMemberRole(a))}`}
+                                                                        title={a}
+                                                                    >
+                                                                        {a}
+                                                                    </span>
+                                                                ))}
+                                                            </div>v>
                                                                                     <div className={`flex gap-3 transition-colors ${isDarkMode?'text-slate-500 group-hover:text-indigo-300':'text-slate-300 group-hover:text-indigo-400'}`}>
                                                                                         {task.description && <Icon name="AlignLeft" size={14} />}
                                                                                         {task.photo && <Icon name="Image" size={14} />}
@@ -785,7 +888,7 @@
                                                             <Icon name="RotateCcw" size={14} /> Restore Task
                                                         </button>
                                                     ) : (
-                                                        <StatusPill status={selectedTask.status} onClick={(e)=>cycleStatus(selectedTask,e)} isDarkMode={isDarkMode} />
+                                                        <StatusPill task={selectedTask} onChangeStatus={changeStatusExplicit} isDarkMode={isDarkMode} />
                                                     )}
                                                     
                                                     {/* V89 FIX: SAFE PRIORITY FALLBACK TO PREVENT CRASH */}
